@@ -1,0 +1,12 @@
+.{
+    .name = .bech32,
+    .version = "0.1.0",
+    .fingerprint = 0xf6c7010a05c8de88,
+    .license = "MIT",
+    .minimum_zig_version = "0.14.1", //"0.15.0-dev.847+850655f06",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "bech32.zig",
+    },
+}

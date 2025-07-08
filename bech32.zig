@@ -144,8 +144,8 @@ pub const standard_uppercase = struct {
 /// Calculates the space needed for expanding `data` to a sequence of u5s,
 /// plus a padding bit if neeeded.
 pub inline fn calcExpansion(len: usize) usize {
-    var size: usize = len * 8;
-    return @divTrunc(size, 5) + @boolToInt(@rem(size, 5) > 0);
+    const size: usize = len * 8;
+    return @divTrunc(size, 5) + @intFromBool(@rem(size, 5) > 0);
 }
 /// The inverse of ::calcExpansion
 pub inline fn calcReduction(len: usize) usize {
@@ -161,14 +161,14 @@ const Polymod = struct {
         self.val = (self.val & std.math.maxInt(u25)) << 5;
         self.val ^= value;
 
-        inline for (generator) |g, i| {
-            if (bitset >> @truncate(u5, i) & 1 != 0)
+        inline for (generator, 0..) |g, i| {
+            if (bitset >> @as(u5, @truncate(i)) & 1 != 0)
                 self.val ^= g;
         }
     }
 
     inline fn finish(self: *Polymod, encoding: Encoding) void {
-        self.val ^= @enumToInt(encoding);
+        self.val ^= @intFromEnum(encoding);
     }
 };
 
@@ -176,7 +176,7 @@ pub fn Bech32Encoder(comptime set: [32]u8, comptime uppercase: bool) type {
     return struct {
         const charset = if (!uppercase) set else blk: {
             var buf: [32]u8 = undefined;
-            for (buf) |*c, i|
+            for (&buf, 0..) |*c, i|
                 c.* = std.ascii.toUpper(set[i]);
 
             break :blk buf;
@@ -203,11 +203,11 @@ pub fn Bech32Encoder(comptime set: [32]u8, comptime uppercase: bool) type {
                 acc_len += 8;
                 while (acc_len >= 5) : (i += 1) {
                     acc_len -= 5;
-                    dest[i] = @truncate(u5, acc >> acc_len);
+                    dest[i] = @truncate(acc >> acc_len);
                 }
             }
             if (acc_len > 0) {
-                dest[i] = @truncate(u5, acc << 5 - acc_len);
+                dest[i] = @truncate(acc << 5 - acc_len);
                 i += 1;
             }
 
@@ -238,7 +238,7 @@ pub fn Bech32Encoder(comptime set: [32]u8, comptime uppercase: bool) type {
             var polymod = Polymod{};
             var upper = false;
             var lower = false;
-            for (hrp) |c, i| {
+            for (hrp, 0..) |c, i| {
                 assert(c >= 33 and c <= 126);
                 var lc = c;
                 switch (c) {
@@ -275,7 +275,7 @@ pub fn Bech32Encoder(comptime set: [32]u8, comptime uppercase: bool) type {
             polymod.finish(encoding);
             for ([6]u5{ 0, 1, 2, 3, 4, 5 }) |n| {
                 const shift = 5 * (5 - n);
-                dest[i] = charset[@truncate(u5, polymod.val >> shift)];
+                dest[i] = charset[@as(u5, @truncate(polymod.val >> shift))];
                 i += 1;
             }
 
@@ -289,7 +289,7 @@ pub fn Bech32Decoder(comptime set: [32]u8) type {
     return struct {
         const reverse_charset = blk: {
             var buf = [_]?u5{null} ** 256;
-            for (set) |c, i| {
+            for (set, 0..) |c, i| {
                 buf[c] = i;
                 buf[std.ascii.toUpper(c)] = i;
             }
@@ -322,10 +322,10 @@ pub fn Bech32Decoder(comptime set: [32]u8) type {
                 acc_len += 5;
                 while (acc_len >= 8) : (i += 1) {
                     acc_len -= 8;
-                    dest[i] = @truncate(u8, acc >> acc_len);
+                    dest[i] = @truncate(acc >> acc_len);
                 }
             }
-            if (acc_len > 5 or @truncate(u8, acc << 8 - acc_len) != 0)
+            if (acc_len > 5 or @as(u8, @truncate(acc << 8 - acc_len)) != 0)
                 return Error.InvalidPadding;
 
             return dest[0..i];
@@ -350,7 +350,7 @@ pub fn Bech32Decoder(comptime set: [32]u8) type {
             var polymod = Polymod{};
             var upper = false;
             var lower = false;
-            for (hrp) |c, i| {
+            for (hrp, 0..) |c, i| {
                 var lc = c;
                 switch (c) {
                     0...32, 127...255 => return Error.BadChar,
@@ -370,7 +370,7 @@ pub fn Bech32Decoder(comptime set: [32]u8) type {
             for (pmod_buf[0..hrp.len]) |c| polymod.step(c & 31);
 
             var convert_buf: [max_data_len]u5 = undefined;
-            for (data) |c, i| {
+            for (data, 0..) |c, i| {
                 if (std.ascii.isUpper(c)) upper = true;
                 if (std.ascii.isLower(c)) lower = true;
 
@@ -392,8 +392,8 @@ pub fn Bech32Decoder(comptime set: [32]u8) type {
             if (upper and lower) return Error.MixedCase;
 
             res.encoding = switch (polymod.val) {
-                @enumToInt(Encoding.bech32) => Encoding.bech32,
-                @enumToInt(Encoding.bech32m) => Encoding.bech32m,
+                @intFromEnum(Encoding.bech32) => Encoding.bech32,
+                @intFromEnum(Encoding.bech32m) => Encoding.bech32m,
                 else => return Error.Invalid,
             };
 
