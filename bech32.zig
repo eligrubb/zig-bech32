@@ -2,6 +2,8 @@
 // Copyright (c) 2017 Takatoshi Nakagawa
 // Copyright (c) 2019 Google LLC
 // Copyright (c) 2021 Stephen Gregoratto
+// Copyright (c) 2023 Chris Heyes
+// Copyright (c) 2025 Eli Grubb
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

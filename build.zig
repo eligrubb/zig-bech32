@@ -25,6 +25,7 @@ pub fn build(b: *std.Build) !void {
         .root_module = b.createModule(.{
             .root_source_file = b.path("bech32.zig"),
             .target = target,
+            .optimize = optimize,
         }),
     });
 
